@@ -15,6 +15,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.persistence.Entity;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -245,11 +246,27 @@ public class HDao {
 	}
 
 	public <T> void save(final T entity) {
+		if (entity == null) {
+			return;
+		}
 		doInTx(new Atom() {
 			public void exec() {
 				currentSession().saveOrUpdate(entity);
 			}
 		});
+	}
+
+	public <T> T merge(final T entity) {
+		if (entity == null) {
+			return null;
+		}
+		final Object[] ret = new Object[] { null };
+		doInTx(new Atom() {
+			public void exec() {
+				ret[0] = currentSession().merge(entity);
+			}
+		});
+		return (T) ret[0];
 	}
 
 	/**
@@ -258,6 +275,9 @@ public class HDao {
 	 * @param entitys
 	 */
 	public <T> void saveAll(final Collection<T> entitys) {
+		if (CollectionUtils.isEmpty(entitys)) {
+			return;
+		}
 		doInTx(new Atom() {
 			public void exec() {
 				for (T entity : entitys) {
@@ -268,6 +288,9 @@ public class HDao {
 	}
 
 	public <T> void update(final T entity) {
+		if (entity == null) {
+			return;
+		}
 		doInTx(new Atom() {
 			public void exec() {
 				currentSession().update(entity);
@@ -276,6 +299,9 @@ public class HDao {
 	}
 
 	public void delete(final Object entity) {
+		if (entity == null) {
+			return;
+		}
 		doInTx(new Atom() {
 			public void exec() {
 				currentSession().delete(entity);
@@ -289,6 +315,9 @@ public class HDao {
 	 * @param entitys
 	 */
 	public <T> void deleteAll(final Collection<T> entitys) {
+		if (CollectionUtils.isEmpty(entitys)) {
+			return;
+		}
 		doInTx(new Atom() {
 			public void exec() {
 				for (Object entity : entitys) {

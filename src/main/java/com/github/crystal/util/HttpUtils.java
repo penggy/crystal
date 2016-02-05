@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -13,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.internet.MimeUtility;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
@@ -39,6 +37,8 @@ import org.apache.commons.logging.LogFactory;
 public class HttpUtils {
 
 	private static final Log log = LogFactory.getLog(HttpUtils.class);
+
+	private static final String[] PROXY_REMOTE_IP_ADDRESS = { "X-Forwarded-For", "X-Real-IP" };
 
 	public static byte[] get(String url) {
 		return get(url, 0);
@@ -129,7 +129,7 @@ public class HttpUtils {
 		}
 		return val;
 	}
-	
+
 	/**
 	 * 拼接url参数
 	 * 
@@ -201,12 +201,32 @@ public class HttpUtils {
 		return -1;
 	}
 
-	public static String getRemortIP(HttpServletRequest request) {
-		String realIp = request.getHeader("X-Real-IP");
-		if(StringUtils.isEmpty(realIp)){
-			return request.getRemoteAddr();
+	public static String getFileName(String url) {
+		try {
+			URL _url = new URL(url);
+			String fileName = _url.getFile();
+			return fileName.substring(fileName.lastIndexOf('/') + 1);
+		} catch (Exception e) {
 		}
-		return realIp;
+		return "";
+	}
+
+	public static String getRemoteIP(HttpServletRequest request) {
+		for (int i = 0; i < PROXY_REMOTE_IP_ADDRESS.length; i++) {
+			String ip = request.getHeader(PROXY_REMOTE_IP_ADDRESS[i]);
+			if (ip != null && ip.trim().length() > 0) {
+				return getRemoteIpFromForward(ip.trim());
+			}
+		}
+		return request.getRemoteAddr();
+	}
+
+	private static String getRemoteIpFromForward(String xforwardIp) {
+		int commaOffset = xforwardIp.indexOf(',');
+		if (commaOffset < 0) {
+			return xforwardIp;
+		}
+		return xforwardIp.substring(0, commaOffset);
 	}
 
 	public static String getUserAgent(HttpServletRequest request) {
@@ -214,9 +234,9 @@ public class HttpUtils {
 			return "";
 		return request.getHeader("User-Agent");
 	}
-	
+
 	public static String getHost(HttpServletRequest request) {
-		if(request == null) {
+		if (request == null) {
 			return "";
 		}
 		String url = request.getRequestURL().toString();
@@ -253,39 +273,12 @@ public class HttpUtils {
 	}
 
 	/**
-	 * 对下载文件名进行编码,防止中文乱码
-	 * 
-	 * @param filename
-	 * @param request
-	 * @return
-	 */
-	public static String encodeFilename(String filename, HttpServletRequest request) {
-		String agent = request.getHeader("USER-AGENT");
-		try {
-			if ((agent != null) && (-1 != agent.indexOf("MSIE"))) {
-				String newFileName = URLEncoder.encode(filename, "UTF-8");
-				newFileName = StringUtils.replace(newFileName, "+", "%20");
-				if (newFileName.length() > 150) {
-					newFileName = new String(filename.getBytes("GB2312"), "ISO8859-1");
-					newFileName = StringUtils.replace(newFileName, " ", "%20");
-				}
-				return newFileName;
-			}
-			if ((agent != null) && (-1 != agent.indexOf("Mozilla")))
-				return MimeUtility.encodeText(filename, "UTF-8", "B");
-
-			return filename;
-		} catch (Exception ex) {
-			return filename;
-		}
-	}
-	
-	/**
 	 * 判断一个请求是否是ajax请求
+	 * 
 	 * @param request
 	 * @return
 	 */
-	public static boolean isAjax(HttpServletRequest request){
+	public static boolean isAjax(HttpServletRequest request) {
 		String xmlHttpRequest = request.getHeader("X-Requested-With");
 		return StringUtils.equalsIgnoreCase(xmlHttpRequest, "XMLHttpRequest");
 	}

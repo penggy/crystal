@@ -1,11 +1,9 @@
 package com.github.crystal.controller;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +17,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -28,7 +25,6 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import com.github.crystal.util.DateUtils;
-import com.github.crystal.util.HttpUtils;
 import com.github.crystal.util.JsonRawString;
 import com.github.crystal.util.PropertiesUtils;
 import com.google.common.collect.Lists;
@@ -43,9 +39,9 @@ public class GlobalUploadController {
 	public JsonRawString upload(HttpServletRequest request, HttpServletResponse response) throws IllegalStateException,
 			IOException {
 		String dir = PropertiesUtils.getProperty("upload.dir", "/tmp/upload");
+		String downloadHost = PropertiesUtils.getProperty("download.host");
 		String time = DateUtils.format(new Date(), "yyyyMMddHHmmss");
 		String path = dir + "/" + time + "/";
-		String host = HttpUtils.getHost(request);
 		List<String> urls = Lists.newArrayList();
 		CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver(request.getSession()
 				.getServletContext());
@@ -69,38 +65,11 @@ public class GlobalUploadController {
 						IOUtils.closeQuietly(fos);
 						IOUtils.closeQuietly(is);
 					}
-					urls.add(host + "/file/download/" + time + "/" + fileName);
+					urls.add(downloadHost +  "/" + time + "/" + fileName);
 				}
 			}
 		}
 		return new JsonRawString(StringUtils.join(urls, ","));
-	}
-
-	@RequestMapping(value = "/file/download/{time}/{fileName}", method = RequestMethod.GET)
-	public void file(HttpServletRequest request, HttpServletResponse response, @PathVariable String time,
-			@PathVariable String fileName) {
-		String dir = PropertiesUtils.getProperty("upload.dir", "/tmp/upload");
-		String filePath = dir + "/" + time + "/" + fileName;
-		InputStream in = null;
-		OutputStream out = null;
-		try {
-			response.reset();
-			response.setBufferSize(Integer.MAX_VALUE);
-			response.setContentType("multipart/form-data");
-			response.setHeader("Content-Disposition", "attachment;fileName=" + fileName);
-			out = response.getOutputStream();
-			in = new FileInputStream(filePath);
-			int len = IOUtils.copy(in, out);
-			response.setContentLength(len);
-			response.setHeader("Content-Length",String.valueOf(len));
-			out.flush();
-			logger.debug("len : {}", len);
-		} catch (Exception e) {
-			String ename = e.getClass().getName();
-			logger.debug(ename);
-		} finally {
-			IOUtils.closeQuietly(in);
-		}
 	}
 
 }

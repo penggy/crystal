@@ -47,6 +47,14 @@ public class DateUtils {
 		return parse(val, "yyyy-MM-dd HH:mm:ss");
 	}
 	
+	public static Date addYears(Date val, int amount){
+		return org.apache.commons.lang.time.DateUtils.addYears(val, amount);
+	}
+	
+	public static Date addMonths(Date val, int amount){
+		return org.apache.commons.lang.time.DateUtils.addMonths(val, amount);
+	}
+	
 	public static Date addDays(Date val, int amount){
 		return org.apache.commons.lang.time.DateUtils.addDays(val, amount);
 	}

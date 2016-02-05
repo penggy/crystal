@@ -23,8 +23,8 @@ public class UUIDBaseEntity implements Comparable<Object>,Serializable {
 
 	@Id
 	@GeneratedValue(generator = "uuid")
-	@GenericGenerator(name = "uuid",strategy = "uuid")
-	@Column(name = "id", length = 32)
+	@GenericGenerator(name = "uuid",strategy = "uuid2")
+	@Column(name = "id", length = 64)
 	public String getId() {
 		return id;
 	}

@@ -8,6 +8,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,10 @@ public class GlobalExceptionHandler {
 		if (cause instanceof BusinessException) {
 			BusinessException be = (BusinessException) cause;
 			return be.getMessage();
+		}
+		
+		if(cause instanceof StaleObjectStateException){
+			return "数据维护中，请稍后再操作!";
 		}
 		
 		StringWriter writer = new StringWriter();

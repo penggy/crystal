@@ -7,11 +7,11 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.StaleObjectStateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
 			ConstraintViolationException cve = (ConstraintViolationException) cause;
 			Set<ConstraintViolation<?>> cvs = cve.getConstraintViolations();
 			String msg = cve.getMessage();
-			if (CollectionUtils.isNotEmpty(cvs)) {
+			if (!CollectionUtils.isEmpty(cvs)) {
 				msg = cve.getConstraintViolations().iterator().next().getMessage();
 			}
 			return msg;

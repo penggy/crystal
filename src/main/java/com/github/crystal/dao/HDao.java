@@ -1,5 +1,6 @@
 package com.github.crystal.dao;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -15,7 +16,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.persistence.Entity;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -29,10 +30,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.util.CollectionUtils;
 
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
-import com.mysql.jdbc.AbandonedConnectionCleanupThread;
 
 @SuppressWarnings("unchecked")
 public class HDao {
@@ -43,8 +44,10 @@ public class HDao {
 	private String username;
 	private String password;
 
-	private String driverClass = "com.mysql.jdbc.Driver";
-	private String dialect = "org.hibernate.dialect.MySQLDialect";
+//	private String driverClass = "com.mysql.jdbc.Driver";
+	private String driverClass = "org.sqlite.JDBC";
+//	private String dialect = "org.hibernate.dialect.MySQLDialect";
+	private String dialect = "com.enigmabridge.hibernate.dialect.SQLiteDialect";
 	private String hbm2ddl = "none";
 	private String showSql = "false";
 	private String packagesToScan = "";
@@ -55,6 +58,14 @@ public class HDao {
 
 	@PostConstruct
 	public void init() {
+		if(StringUtils.equals(driverClass,"org.sqlite.JDBC")){
+			String fileName = StringUtils.replace(url,"jdbc:sqlite:","");
+			try {
+				FileUtils.touch(FileUtils.getFile(fileName));
+			} catch (IOException e) {
+				logger.error("touch db file error.",e);
+			}
+		}
 		Configuration cfg = new Configuration();
 
 		cfg.setProperty("hibernate.connection.driver_class", driverClass);
@@ -82,7 +93,7 @@ public class HDao {
 
 		ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
 		scanner.addIncludeFilter(new AnnotationTypeFilter(Entity.class));
-		String[] pkgs = packagesToScan.split("[,|;|\\s+]");
+		String[] pkgs = packagesToScan.split("[,;\\s]+");
 		for (String packageToScan : pkgs) {
 			packageToScan = StringUtils.trim(packageToScan);
 			if (StringUtils.isEmpty(packageToScan)) {
@@ -123,11 +134,12 @@ public class HDao {
 			}
 		}
 
-		try {
-			AbandonedConnectionCleanupThread.shutdown();
-		} catch (InterruptedException e) {
-			logger.error("fail to shutdown mysql abandoned connection clean up thread", e);
-		}
+//		for mysql driver
+//		try {
+//			AbandonedConnectionCleanupThread.shutdown();
+//		} catch (InterruptedException e) {
+//			logger.error("fail to shutdown mysql abandoned connection clean up thread", e);
+//		}
 	}
 
 	public String getUrl() {

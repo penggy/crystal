@@ -8,16 +8,16 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.UnknownSessionException;
 import org.apache.shiro.session.mgt.eis.AbstractSessionDAO;
 import org.apache.shiro.session.mgt.eis.SessionIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.SerializationUtils;
 
 import com.github.crystal.dao.RedisDao;
-import com.github.crystal.util.SerializeUtils;
 import com.google.common.collect.Lists;
 
 public class RedisSessionDao extends AbstractSessionDAO {
@@ -59,10 +59,10 @@ public class RedisSessionDao extends AbstractSessionDAO {
 	public Collection<Session> getActiveSessions() {
 		List<Session> sessions = Lists.newArrayList();
 		Set<byte[]> keys = redisDao.keys(sessionKey + "*");
-		if (CollectionUtils.isNotEmpty(keys)) {
+		if (!CollectionUtils.isEmpty(keys)) {
 			for (byte[] key : keys) {
 				byte[] val = redisDao.get(sessionKey + new String(key));
-				Session session = (Session) SerializeUtils.deserialize(val);
+				Session session = (Session) SerializationUtils.deserialize(val);
 				sessions.add(session);
 			}
 		}
@@ -83,7 +83,7 @@ public class RedisSessionDao extends AbstractSessionDAO {
 			logger.error("session or session id is null");
 			return;
 		}
-		byte[] val = SerializeUtils.serialize(session);
+		byte[] val = SerializationUtils.serialize(session);
 		redisDao.set(sessionKey + session.getId().toString(), val,
 				(int) session.getTimeout() / 1000);
 	}
@@ -97,7 +97,7 @@ public class RedisSessionDao extends AbstractSessionDAO {
 		if (val == null) {
 			return null;
 		}
-		Session session = (Session) SerializeUtils.deserialize(val);
+		Session session = (Session) SerializationUtils.deserialize(val);
 		if (session != null) {
 			redisDao.expire(sessionKey + sessionId.toString(), (int) session.getTimeout() / 1000);
 		}
